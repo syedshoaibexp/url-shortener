@@ -1,22 +1,29 @@
-import dns from 'node:dns';
-dns.setDefaultResultOrder('ipv4first');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
-
-
 import express from 'express';
 import mongoose from 'mongoose';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { shortUrl, getOriginalUrl } from "./Controllers/url.js";
 
 dotenv.config();
 
+// Fix directory path resolution for ES Modules on Serverless (Vercel)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
+
+// Set up EJS view engine & explicit views directory
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
 
 app.use(express.urlencoded({ extended: true }));
 
-// Connect to MongoDB
+// Connect to MongoDB using environment variable or fallback
+const mongoURI = process.env.MONGO_URI || "mongodb+srv://syedshoaibexp_db_user:shoaib@cluster0.sjrswpy.mongodb.net/?retryWrites=true&w=majority";
+
 mongoose
-  .connect(process.env.MONGO_URI, {
+  .connect(mongoURI, {
     dbName: "NodeJS_Practice_1",
   })
   .then(() => console.log("MongoDb Connected..!"))
@@ -34,8 +41,8 @@ app.post('/short', shortUrl);
 app.get("/:shortCode", getOriginalUrl);
 
 // Run server locally
+const port = process.env.PORT || 1000;
 if (process.env.NODE_ENV !== 'production') {
-  const port = process.env.PORT || 1000;
   app.listen(port, () => console.log(`Server is running on port ${port}`));
 }
 
